@@ -9,6 +9,9 @@ from ..core.config import settings
 from ..models import GeoInfo, SessionMetadata
 
 
+_terminated_mock_sessions: set[str] = set()
+
+
 class TeamViewerClient:
     def __init__(self) -> None:
         self._base_url = settings.teamviewer_base_url.rstrip("/")
@@ -24,7 +27,10 @@ class TeamViewerClient:
         If TEAMVIEWER_API_TOKEN is not configured, returns deterministic mock sessions.
         """
         if not self._token:
-            return self._mock_sessions(limit=limit)
+            sessions = self._mock_sessions(limit=limit)
+            if _terminated_mock_sessions:
+                sessions = [s for s in sessions if s.session_id not in _terminated_mock_sessions]
+            return sessions
 
         # NOTE: TeamViewer API resource names differ by plan/account. This implementation
         # is intentionally conservative and may need tweaking once you confirm the exact
@@ -61,7 +67,8 @@ class TeamViewerClient:
 
     async def terminate_session(self, session_id: str) -> tuple[bool, str]:
         if not self._token:
-            return True, "Mock termination succeeded (no TEAMVIEWER_API_TOKEN configured)."
+            _terminated_mock_sessions.add(session_id)
+            return True, "Mock termination succeeded for demo session (no TEAMVIEWER_API_TOKEN configured)."
 
         # TeamViewer termination differs; we try common patterns.
         candidates = [
