@@ -26,6 +26,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:8501",
         "https://sentinelflow-frontend.onrender.com",
+        "https://120l-teamviewe.streamlit.app/",
     ],
     allow_credentials=True,
     allow_methods=["*"],
