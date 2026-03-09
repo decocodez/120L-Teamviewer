@@ -13,9 +13,16 @@ class Cfg:
     username: str
 
 
+def _get_secret(key: str) -> str | None:
+    try:
+        return str(st.secrets.get(key))  # type: ignore[attr-defined]
+    except Exception:
+        return None
+
+
 def cfg_from_env() -> Cfg:
-    backend_url = st.secrets.get("SENTINELFLOW_BACKEND_URL", None) or _env("SENTINELFLOW_BACKEND_URL", "http://127.0.0.1:8000")
-    username = st.secrets.get("SENTINELFLOW_LOGIN_USERNAME", None) or _env("SENTINELFLOW_LOGIN_USERNAME", "admin")
+    backend_url = _get_secret("SENTINELFLOW_BACKEND_URL") or _env("SENTINELFLOW_BACKEND_URL", "http://127.0.0.1:8000")
+    username = _get_secret("SENTINELFLOW_LOGIN_USERNAME") or _env("SENTINELFLOW_LOGIN_USERNAME", "admin")
     return Cfg(backend_url=backend_url.rstrip("/"), username=username)
 
 
@@ -40,7 +47,7 @@ def require_login_ui() -> None:
 
     cfg = cfg_from_env()
     expected_user = cfg.username
-    expected_pass = st.secrets.get("SENTINELFLOW_LOGIN_PASSWORD", None) or _env("SENTINELFLOW_LOGIN_PASSWORD", "admin")
+    expected_pass = _get_secret("SENTINELFLOW_LOGIN_PASSWORD") or _env("SENTINELFLOW_LOGIN_PASSWORD", "admin")
 
     with st.form("login"):
         st.subheader("Login Gate")
