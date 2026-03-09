@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     teamviewer_base_url: str = "https://webapi.teamviewer.com/api/v1"
     teamviewer_api_token: str = ""
 
-    gemini_api_key: str = ""
+    gemini_api_key: str = "AIzaSyD66kXnehtq3Fg0BiZuI_RVep9CA2auaNk"
     gemini_model: str = "gemini-1.5-flash"
 
 
