@@ -21,7 +21,7 @@ def _get_secret(key: str) -> str | None:
 
 
 def cfg_from_env() -> Cfg:
-    backend_url = _get_secret("SENTINELFLOW_BACKEND_URL") or _env("SENTINELFLOW_BACKEND_URL", "http://127.0.0.1:8000")
+    backend_url = _get_secret("SENTINELFLOW_BACKEND_URL") or _env("SENTINELFLOW_BACKEND_URL", "https://sentinelflow-backend.onrender.com/")
     username = _get_secret("SENTINELFLOW_LOGIN_USERNAME") or _env("SENTINELFLOW_LOGIN_USERNAME", "admin")
     return Cfg(backend_url=backend_url.rstrip("/"), username=username)
 
