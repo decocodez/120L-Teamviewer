@@ -1,0 +1,35 @@
+---
+description: How to deploy this project from Cursor to the GitHub repo
+alwaysApply: true
+---
+
+# Deploying from Cursor to GitHub
+
+When the user asks to "deploy" code, treat that as **committing and pushing** changes for this project to:
+
+- **GitHub repo**: `https://github.com/decocodez/120L-Teamviewer.git`
+
+## Deployment conventions
+
+- **Branch**
+  - Prefer pushing to a feature branch (e.g. `feature/sentinelflow-update`) unless the user explicitly says to push to `main`.
+  - Never use `--force` on `main` unless the user explicitly requests it.
+
+- **Remote setup (first time only)**
+  - If `git remote` is not configured, run:
+    - `git init` (if needed)
+    - `git remote add origin https://github.com/decocodez/120L-Teamviewer.git`
+
+- **Commit style**
+  - Use a **single, concise commit** per logical change set.
+  - Focus commit messages on **why** the change was made (not just what).
+  - Do **not** commit secrets (e.g. `.env`, API keys, tokens).
+
+- **Deploy flow (high level)**
+  1. Review `git status` and `git diff` before committing.
+  2. Add only relevant files (avoid `.env`, `.cursor/`, virtualenvs, build artifacts).
+  3. Create a commit with a clear message.
+  4. Push to GitHub:
+     - First push: `git push -u origin <branch>`
+     - Subsequent pushes: `git push`
+
