@@ -16,7 +16,7 @@ class GeminiResult:
 class GeminiAnalyzer:
     def __init__(self) -> None:
         self._api_key = (settings.gemini_api_key or "AIzaSyD66kXnehtq3Fg0BiZuI_RVep9CA2auaNk").strip()
-        self._model = (settings.gemini_model or "gemini-1.5-flash").strip()
+        self._model = (settings.gemini_model or "gemini-2.5-flash").strip()
 
     async def assess(self, session: SessionMetadata) -> GeminiResult:
         if not self._api_key:
