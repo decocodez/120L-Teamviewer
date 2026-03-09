@@ -2,9 +2,9 @@ services:
   - type: web
     name: sentinelflow-backend
     env: python
-    rootDir: .
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
   - type: web
     name: sentinelflow-frontend
