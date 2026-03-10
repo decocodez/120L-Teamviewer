@@ -147,7 +147,7 @@ def page_live_monitor(cfg: Cfg):
     time.sleep(12)
     st.rerun()
 
-# --- PAGE: COMMAND CENTER (TABLE UPDATED) ---
+# --- PAGE: COMMAND CENTER ---
 def page_command_center(cfg: Cfg) -> None:
     st.header("Security Command Center")
     col_a, col_b, col_c, col_d = st.columns(4)
@@ -178,7 +178,7 @@ def page_command_center(cfg: Cfg) -> None:
 
     st.subheader("Session Intelligence Matrix")
     
-    # --- TABLE LOGIC ---
+    # --- UPDATED TABLE LOGIC ---
     rows = []
     for s in sessions:
         sid = s["session_id"]
@@ -193,10 +193,10 @@ def page_command_center(cfg: Cfg) -> None:
                 "Start Time": s.get("start_time"),
                 "End Time": s.get("end_time") or "Active",
                 "IP Address": s.get("source_ip") or "Unknown",
-                "Region": geo.get("region") or "Unknown"
+                "Country": geo.get("country") or "Unknown"
             })
     
-    # Display table with better naming and column sorting
+    # Display table with Country instead of Region
     st.dataframe(
         rows, 
         use_container_width=True, 
@@ -205,6 +205,7 @@ def page_command_center(cfg: Cfg) -> None:
             "Risk Score": st.column_config.ProgressColumn("Risk Score", min_value=0, max_value=100, format="%d"),
             "Start Time": st.column_config.DatetimeColumn("Start Time", format="D MMM YYYY, h:mm a"),
             "End Time": st.column_config.DatetimeColumn("End Time", format="D MMM YYYY, h:mm a"),
+            "Country": st.column_config.TextColumn("Country", help="Country code derived from IP geolocation")
         }
     )
 
