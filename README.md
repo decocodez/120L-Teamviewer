@@ -1,7 +1,7 @@
 # SentinelFlow AI
 Pure-Python security intelligence dashboard that audits remote desktop activity via the TeamViewer REST API and Gemini.
 
-## Quickstart
+## Local Quickstart
 
 ### 1) Create venv + install deps
 
