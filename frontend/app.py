@@ -102,20 +102,23 @@ def page_live_monitor(cfg: Cfg):
     st.header("Real-Time AI Auditor")
     st.info("Continuous polling active: Monitoring for new TeamViewer connections.")
 
+    # Initialize tracking if not present
     if "seen_sessions" not in st.session_state:
-        st.session_state.seen_sessions = set()
+        st.session_state.seen_sessions = []
 
     col_feed, col_stats = st.columns([2, 1])
 
     if st.sidebar.button("Simulate New Activity"):
-        st.session_state.seen_sessions = set()
+        st.session_state.seen_sessions = []
         update_audit_log("SIMULATION: Cache cleared for re-audit.")
         st.toast("Activity simulated!")
 
     try:
         sessions = fetch_sessions(cfg.backend_url, limit=5)
         active_ids = {s["session_id"] for s in sessions}
-        new_ids = active_ids - st.session_state.seen_sessions
+        
+        # Identify sessions not yet seen in the current tracking list
+        new_ids = [sid for sid in active_ids if sid not in st.session_state.seen_sessions]
 
         if new_ids:
             update_audit_log(f"Detected {len(new_ids)} un-audited connections.")
@@ -124,16 +127,19 @@ def page_live_monitor(cfg: Cfg):
                 new_batch = [s for s in sessions if s["session_id"] in new_ids]
                 results = analyze_sessions(cfg.backend_url, new_batch)
                 for sid, a in results.items():
-                    st.session_state.seen_sessions.add(sid)
+                    # Append new IDs to maintain order for the live feed
+                    st.session_state.seen_sessions.append(sid)
                     update_audit_log(f"AUDIT: {sid} | {a['level'].upper()} | Score: {a['score']}")
                 status.update(label="Audit Cycle Complete", state="complete", expanded=False)
 
         with col_feed:
-            st.subheader("Live Assessment Feed")
+            st.subheader("Live Assessment Feed (Last 5)")
             if not st.session_state.seen_sessions:
                 st.write("No active sessions detected.")
             else:
-                for sid in list(st.session_state.seen_sessions)[-5:]:
+                # Reverse the list to show the most recent at the top
+                recent_activity = st.session_state.seen_sessions[::-1]
+                for sid in recent_activity[:5]:
                     st.success(f"Session {sid}: Monitored & AI-Verified")
 
         with col_stats:
