@@ -19,7 +19,6 @@ def _get_secret(key: str) -> str | None:
         return None
 
 def cfg_from_env() -> Cfg:
-    # Prioritizes Streamlit Secrets, then OS Env, then Render Default
     backend_url = _get_secret("SENTINELFLOW_BACKEND_URL") or _env("SENTINELFLOW_BACKEND_URL", "https://sentinelflow-backend.onrender.com/")
     username = _get_secret("SENTINELFLOW_LOGIN_USERNAME") or _env("SENTINELFLOW_LOGIN_USERNAME", "admin")
     return Cfg(backend_url=backend_url.rstrip("/"), username=username)
@@ -34,7 +33,6 @@ def is_logged_in() -> bool:
 
 def require_login_ui() -> None:
     st.set_page_config(page_title="SentinelFlow AI", layout="wide", page_icon="🛡️")
-    
     if is_logged_in():
         return
 
@@ -69,7 +67,6 @@ def show_sidebar_audit():
     st.sidebar.markdown("---")
     st.sidebar.subheader("🛡️ Live Audit Feed")
     if "audit_trail" in st.session_state and st.session_state.audit_trail:
-        # Show last 12 entries
         logs = "\n".join(st.session_state.audit_trail[-12:])
         st.sidebar.code(logs, language="text")
     else:
@@ -91,7 +88,7 @@ def analyze_sessions(backend_url: str, sessions: list[dict]) -> dict[str, dict]:
         r.raise_for_status()
         return r.json()["assessments"]
     except Exception as e:
-        update_audit_log(f"CRITICAL: AI Backend Unreachable")
+        update_audit_log("CRITICAL: AI Backend Unreachable")
         st.error(f"Backend Analysis Error: {e}")
         st.stop()
 
@@ -100,7 +97,7 @@ def kill_session(backend_url: str, session_id: str, reason: str | None) -> dict:
     r.raise_for_status()
     return r.json()
 
-# --- PAGE: LIVE MONITOR (SIMULATION) ---
+# --- PAGE: LIVE MONITOR ---
 def page_live_monitor(cfg: Cfg):
     st.header("🕵️ Real-Time AI Auditor")
     st.info("Continuous polling active: Monitoring for new TeamViewer connections.")
@@ -108,16 +105,13 @@ def page_live_monitor(cfg: Cfg):
     if "seen_sessions" not in st.session_state:
         st.session_state.seen_sessions = set()
 
-    # Layout
     col_feed, col_stats = st.columns([2, 1])
 
-    # Simulation Reset
     if st.sidebar.button("🚨 Simulate New Activity"):
         st.session_state.seen_sessions = set()
         update_audit_log("SIMULATION: Cache cleared for re-audit.")
         st.toast("Activity simulated!")
 
-    # Processing Logic
     try:
         sessions = fetch_sessions(cfg.backend_url, limit=5)
         active_ids = {s["session_id"] for s in sessions}
@@ -129,12 +123,9 @@ def page_live_monitor(cfg: Cfg):
                 st.write("Extracting metadata...")
                 new_batch = [s for s in sessions if s["session_id"] in new_ids]
                 results = analyze_sessions(cfg.backend_url, new_batch)
-                
                 for sid, a in results.items():
                     st.session_state.seen_sessions.add(sid)
-                    msg = f"AUDIT: {sid} | {a['level'].upper()} | Score: {a['score']}"
-                    update_audit_log(msg)
-                
+                    update_audit_log(f"AUDIT: {sid} | {a['level'].upper()} | Score: {a['score']}")
                 status.update(label="Audit Cycle Complete", state="complete", expanded=False)
 
         with col_feed:
@@ -156,7 +147,7 @@ def page_live_monitor(cfg: Cfg):
     time.sleep(12)
     st.rerun()
 
-# --- PAGE: COMMAND CENTER ---
+# --- PAGE: COMMAND CENTER (TABLE UPDATED) ---
 def page_command_center(cfg: Cfg) -> None:
     st.header("Security Command Center")
     col_a, col_b, col_c, col_d = st.columns(4)
@@ -179,19 +170,43 @@ def page_command_center(cfg: Cfg) -> None:
     c1, c2 = st.columns(2)
     levels = [assessments[s["session_id"]]["level"] for s in sessions if s.get("session_id") in assessments]
     with c1:
-        st.plotly_chart(px.histogram(x=levels, title="Risk Level Distribution"), use_container_width=True)
+        st.plotly_chart(px.histogram(x=levels, title="Risk Level Distribution", color=levels, 
+                                     color_discrete_map={"low":"green", "medium":"orange", "high":"red", "critical":"purple"}), use_container_width=True)
     with c2:
         countries = [(s.get("geo") or {}).get("country", "Unknown") for s in sessions]
         st.plotly_chart(px.pie(names=countries, title="Geographic Origin"), use_container_width=True)
 
     st.subheader("Session Intelligence Matrix")
+    
+    # --- TABLE LOGIC ---
     rows = []
     for s in sessions:
         sid = s["session_id"]
         if sid in assessments:
             a = assessments[sid]
-            rows.append({"ID": sid, "Score": a["score"], "Level": a["level"], "User": s.get("remote_user"), "IP": s.get("source_ip")})
-    st.dataframe(rows, use_container_width=True, hide_index=True)
+            geo = s.get("geo") or {}
+            rows.append({
+                "Session ID": sid,
+                "Risk Score": a["score"],
+                "Risk Level": a["level"].upper(),
+                "Remote User": s.get("remote_user") or "N/A",
+                "Start Time": s.get("start_time"),
+                "End Time": s.get("end_time") or "Active",
+                "IP Address": s.get("source_ip") or "Unknown",
+                "Region": geo.get("region") or "Unknown"
+            })
+    
+    # Display table with better naming and column sorting
+    st.dataframe(
+        rows, 
+        use_container_width=True, 
+        hide_index=True,
+        column_config={
+            "Risk Score": st.column_config.ProgressColumn("Risk Score", min_value=0, max_value=100, format="%d"),
+            "Start Time": st.column_config.DatetimeColumn("Start Time", format="D MMM YYYY, h:mm a"),
+            "End Time": st.column_config.DatetimeColumn("End Time", format="D MMM YYYY, h:mm a"),
+        }
+    )
 
 # --- PAGE: INVESTIGATION ---
 def page_investigation(cfg: Cfg) -> None:
@@ -220,15 +235,11 @@ def page_investigation(cfg: Cfg) -> None:
         st.subheader("Risk Signals")
         for sig in a.get("signals", []):
             st.write(f"🚩 {sig}")
-        
-        with st.expander("View Raw Metadata"):
-            st.json(session)
 
 # --- PAGE: SYSTEM CONTROLS ---
 def page_system_controls(cfg: Cfg) -> None:
     st.header("System Controls")
     st.subheader("Active Session Kill Switch")
-    
     sessions = fetch_sessions(cfg.backend_url, limit=50)
     sid = st.selectbox("Target Session", options=[s["session_id"] for s in sessions])
     reason = st.text_input("Termination Reason", value="Flagged by SentinelFlow AI")
@@ -243,11 +254,10 @@ def page_system_controls(cfg: Cfg) -> None:
             else:
                 st.error(resp.get("message"))
 
-# --- NAVIGATION & MAIN ---
+# --- NAVIGATION ---
 def main() -> None:
     require_login_ui()
     cfg = cfg_from_env()
-    
     page = st.sidebar.radio("Navigate", ["Live AI Auditor", "Security Command Center", "Log Investigation Hub", "System Controls"])
     show_sidebar_audit()
 
