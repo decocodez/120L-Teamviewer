@@ -65,7 +65,7 @@ def update_audit_log(message: str):
 
 def show_sidebar_audit():
     st.sidebar.markdown("---")
-    st.sidebar.subheader("🛡️ Live Audit Feed")
+    st.sidebar.subheader("Live Audit Feed")
     if "audit_trail" in st.session_state and st.session_state.audit_trail:
         logs = "\n".join(st.session_state.audit_trail[-12:])
         st.sidebar.code(logs, language="text")
@@ -99,7 +99,7 @@ def kill_session(backend_url: str, session_id: str, reason: str | None) -> dict:
 
 # --- PAGE: LIVE MONITOR ---
 def page_live_monitor(cfg: Cfg):
-    st.header("🕵️ Real-Time AI Auditor")
+    st.header("Real-Time AI Auditor")
     st.info("Continuous polling active: Monitoring for new TeamViewer connections.")
 
     if "seen_sessions" not in st.session_state:
@@ -107,7 +107,7 @@ def page_live_monitor(cfg: Cfg):
 
     col_feed, col_stats = st.columns([2, 1])
 
-    if st.sidebar.button("🚨 Simulate New Activity"):
+    if st.sidebar.button("Simulate New Activity"):
         st.session_state.seen_sessions = set()
         update_audit_log("SIMULATION: Cache cleared for re-audit.")
         st.toast("Activity simulated!")
