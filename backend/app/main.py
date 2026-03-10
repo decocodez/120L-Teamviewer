@@ -20,7 +20,7 @@ logger = logging.getLogger("sentinelflow")
 def require_login(x_sentinelflow_user: str | None = Header(default=None)) -> None:
     """Checks the header passed by Streamlit against the environment config."""
     if not x_sentinelflow_user or x_sentinelflow_user != settings.sentinelflow_login_username:
-        logger.warning(f"🔒 Unauthorized access attempt: {x_sentinelflow_user}")
+        logger.warning(f"Unauthorized access attempt: {x_sentinelflow_user}")
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 app = FastAPI(title="SentinelFlow AI Backend", version="0.1.0")
@@ -44,10 +44,10 @@ async def health() -> dict[str, str]:
 
 @app.get("/sessions", response_model=list[SessionMetadata])
 async def sessions(_: None = Depends(require_login), limit: int = 50) -> list[SessionMetadata]:
-    logger.info(f"📡 Fetching up to {limit} sessions from TeamViewer...")
+    logger.info(f"Fetching up to {limit} sessions from TeamViewer...")
     tv = TeamViewerClient()
     data = await tv.list_sessions(limit=limit)
-    logger.info(f"✅ Retrieved {len(data)} sessions.")
+    logger.info(f"Retrieved {len(data)} sessions.")
     return data
 
 @app.post("/analyze", response_model=AnalyzeResponse)
@@ -55,27 +55,27 @@ async def analyze(payload: AnalyzeRequest, _: None = Depends(require_login)) -> 
     analyzer = GeminiAnalyzer()
     assessments = {}
     
-    logger.info(f"🧠 AI ANALYSIS START: {len(payload.sessions)} items in queue.")
+    logger.info(f"AI ANALYSIS START: {len(payload.sessions)} items in queue.")
     
     for s in payload.sessions:
-        logger.info(f"🔍 Investigating: {s.session_id} (User: {s.remote_user})")
+        logger.info(f"Investigating: {s.session_id} (User: {s.remote_user})")
         res = await analyzer.assess(s)
         assessments[s.session_id] = res.assessment
-        logger.info(f"⚖️ Result: {res.assessment.level.upper()} | Score: {res.assessment.score}")
+        logger.info(f"Result: {res.assessment.level.upper()} | Score: {res.assessment.score}")
         
     logger.info("🏁 AI Analysis cycle complete.")
     return AnalyzeResponse(assessments=assessments)
 
 @app.post("/kill", response_model=KillResponse)
 async def kill(req: KillRequest, _: None = Depends(require_login)) -> KillResponse:
-    logger.warning(f"🚨 TERMINATION REQUESTED: Session {req.session_id}")
+    logger.warning(f"TERMINATION REQUESTED: Session {req.session_id}")
     tv = TeamViewerClient()
     ok, msg = await tv.terminate_session(req.session_id)
     reason = f" Reason: {req.reason}" if req.reason else ""
     
     if ok:
-        logger.info(f"🔥 Session {req.session_id} successfully terminated.")
+        logger.info(f"Session {req.session_id} successfully terminated.")
     else:
-        logger.error(f"❌ Termination failed: {msg}")
+        logger.error(f"Termination failed: {msg}")
         
     return KillResponse(session_id=req.session_id, terminated=ok, message=msg + reason)
