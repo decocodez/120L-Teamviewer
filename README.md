@@ -1,5 +1,4 @@
-# SentinelFlow AI (MVP)
-
+# SentinelFlow AI
 Pure-Python security intelligence dashboard that audits remote desktop activity via the TeamViewer REST API and Gemini.
 
 ## Quickstart
